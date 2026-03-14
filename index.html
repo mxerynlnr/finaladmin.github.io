@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Eryn's Debut — RSVP Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Cinzel:wght@400;600&display=swap" rel="stylesheet"/>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{min-height:100vh;background:radial-gradient(ellipse at 50% 0%,#fce4ed,#e8829e,#c45c7a);font-family:'Cormorant Garamond',serif;color:#2a0a14;padding:24px 16px 60px}
+
+  /* ── SETUP BANNER ── */
+  #setupBanner{background:rgba(255,255,230,0.18);border:1px solid rgba(255,255,180,0.5);border-radius:14px;padding:18px 22px;max-width:640px;margin:0 auto 26px;color:#fff;font-size:.97rem;line-height:1.7}
+  #setupBanner h3{font-family:'Cinzel',serif;font-size:1rem;letter-spacing:2px;margin-bottom:10px;color:#ffe}
+  #setupBanner code{background:rgba(0,0,0,.25);border-radius:5px;padding:1px 7px;font-size:.88rem;letter-spacing:.5px;color:#ffffc0}
+  #setupBanner.hidden{display:none}
+  .url-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+  .url-row input{flex:1;min-width:200px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.4);border-radius:8px;padding:8px 14px;color:#fff;font-size:.95rem;outline:none}
+  .url-row input::placeholder{color:rgba(255,255,255,.45)}
+  .url-row button{background:rgba(255,255,255,.25);border:1px solid rgba(255,255,255,.5);border-radius:8px;padding:8px 18px;color:#fff;cursor:pointer;font-family:'Cormorant Garamond',serif;font-size:.95rem;white-space:nowrap}
+  .url-row button:hover{background:rgba(255,255,255,.38)}
+
+  .header{text-align:center;margin-bottom:22px}
+  .header h1{font-family:'Cinzel',serif;font-size:clamp(1.4rem,5vw,2.2rem);font-weight:600;color:#fff;text-shadow:0 2px 12px rgba(120,20,60,.4);letter-spacing:3px;margin-bottom:6px}
+  .header p{color:rgba(255,255,255,.85);font-size:1rem;font-style:italic}
+
+  .sync-bar{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:20px;font-size:.85rem;color:rgba(255,255,255,.75);font-style:italic}
+  .sync-dot{width:9px;height:9px;border-radius:50%;background:#aaa;flex-shrink:0;transition:background .4s}
+  .sync-dot.ok{background:#5effa0}
+  .sync-dot.err{background:#ff7070}
+  .sync-dot.loading{background:#ffe066;animation:blink 1s infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+
+  .tabs{display:flex;justify-content:center;gap:10px;margin-bottom:26px;flex-wrap:wrap}
+  .tab-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.35);border-radius:50px;padding:9px 26px;color:#fff;font-family:'Cinzel',serif;font-size:.82rem;letter-spacing:2px;cursor:pointer;transition:background .2s,transform .15s}
+  .tab-btn:hover{background:rgba(255,255,255,.28);transform:translateY(-1px)}
+  .tab-btn.active{background:rgba(255,255,255,.35);border-color:#fff;font-weight:600}
+  .tab-pane{display:none}.tab-pane.active{display:block}
+
+  .stats{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:26px}
+  .stat-card{background:rgba(255,255,255,.2);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.35);border-radius:14px;padding:14px 20px;text-align:center;min-width:100px}
+  .stat-card .num{font-size:1.9rem;font-weight:600;color:#fff;line-height:1}
+  .stat-card .lbl{font-size:.72rem;color:rgba(255,255,255,.8);letter-spacing:1.5px;text-transform:uppercase;margin-top:4px}
+
+  .controls{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:16px}
+  .filter-btn{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);border-radius:50px;padding:7px 18px;color:#fff;font-family:'Cormorant Garamond',serif;font-size:.92rem;letter-spacing:1px;cursor:pointer;transition:background .2s}
+  .filter-btn:hover,.filter-btn.active{background:rgba(255,255,255,.35);border-color:#fff}
+  .filter-btn.active{font-weight:600}
+
+  .search-wrap{display:flex;justify-content:center;margin-bottom:18px}
+  .search-wrap input{width:min(100%,400px);background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);border-radius:50px;padding:9px 20px;color:#fff;font-family:'Cormorant Garamond',serif;font-size:1rem;outline:none}
+  .search-wrap input::placeholder{color:rgba(255,255,255,.55)}
+
+  .table-wrap{max-width:900px;margin:0 auto;background:rgba(255,255,255,.14);backdrop-filter:blur(12px);border-radius:16px;border:1px solid rgba(255,255,255,.28);overflow:hidden}
+  table{width:100%;border-collapse:collapse}
+  thead tr{background:rgba(255,255,255,.18)}
+  th{font-family:'Cinzel',serif;font-size:.72rem;letter-spacing:2px;color:#fff;padding:13px 16px;text-align:left;text-transform:uppercase;cursor:pointer;user-select:none}
+  th:hover{background:rgba(255,255,255,.1)}
+  tbody tr{border-top:1px solid rgba(255,255,255,.1);transition:background .15s}
+  tbody tr:hover{background:rgba(255,255,255,.08)}
+  td{padding:12px 16px;font-size:1rem;color:rgba(255,255,255,.95);vertical-align:middle}
+  td.name-cell{font-weight:600;font-size:1.05rem}
+  td.time-cell{font-size:.8rem;color:rgba(255,255,255,.55);font-style:italic}
+
+  .badge{display:inline-block;padding:3px 11px;border-radius:50px;font-size:.75rem;letter-spacing:1px;text-transform:uppercase;font-weight:600;white-space:nowrap}
+  .badge-roses       {background:rgba(180,30,60,.35); border:1px solid rgba(220,80,100,.5); color:#ffd0d8}
+  .badge-gift        {background:rgba(180,130,20,.35);border:1px solid rgba(220,180,60,.5); color:#fff0b0}
+  .badge-balloons    {background:rgba(100,60,180,.35);border:1px solid rgba(160,120,220,.5);color:#e0d0ff}
+  .badge-bills       {background:rgba(20,60,140,.35); border:1px solid rgba(80,120,200,.5); color:#c0d8ff}
+  .badge-host        {background:rgba(160,80,20,.35); border:1px solid rgba(220,140,60,.5); color:#ffe0b0}
+  .badge-photographer{background:rgba(20,120,80,.35); border:1px solid rgba(60,180,120,.5); color:#b0ffd8}
+  .badge-hvg         {background:rgba(160,20,160,.35);border:1px solid rgba(220,80,220,.5); color:#ffd0ff}
+
+  .status-badge{display:inline-block;padding:3px 11px;border-radius:50px;font-size:.75rem;letter-spacing:1px;font-weight:600;white-space:nowrap}
+  .status-submitted{background:rgba(20,160,80,.35);border:1px solid rgba(60,220,120,.5);color:#b0ffd0}
+  .status-pending  {background:rgba(120,120,120,.25);border:1px solid rgba(180,180,180,.3);color:rgba(255,255,255,.45)}
+
+  .empty{text-align:center;padding:50px 20px;color:rgba(255,255,255,.6);font-style:italic;font-size:1.1rem}
+
+  .action-btns{display:flex;gap:12px;justify-content:center;margin-top:24px;flex-wrap:wrap}
+  .btn{border-radius:50px;padding:10px 26px;font-family:'Cormorant Garamond',serif;font-size:.95rem;letter-spacing:1px;cursor:pointer;transition:background .2s;border:1px solid}
+  .btn-refresh{background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.35);color:#fff}
+  .btn-refresh:hover{background:rgba(255,255,255,.25)}
+  .btn-clear{background:rgba(180,30,60,.25);border-color:rgba(220,80,100,.4);color:#ffd0d8}
+  .btn-clear:hover{background:rgba(180,30,60,.45)}
+
+  .remove-btn{background:rgba(200,40,60,.25);border:1px solid rgba(220,80,100,.4);border-radius:50%;width:28px;height:28px;color:#ffb0b8;font-size:.8rem;cursor:pointer;transition:background .2s,transform .15s;display:flex;align-items:center;justify-content:center;padding:0}
+  .remove-btn:hover{background:rgba(200,40,60,.6);transform:scale(1.15)}
+  @media(max-width:600px){td.time-cell{display:none}th:last-child{display:none}th,td{padding:10px 10px}}
+</style>
+</head>
+<body>
+
+<!-- ══ SETUP BANNER (hidden after URL is saved) ══ -->
+<div id="setupBanner">
+  <h3>⚙ FIRST-TIME SETUP</h3>
+  Paste your <strong>Firebase Realtime Database URL</strong> below and click Save.<br>
+  It looks like: <code>https://your-project-default-rtdb.firebaseio.com</code><br>
+  <em>This is saved in your browser — you only need to do this once.</em>
+  <div class="url-row">
+    <input id="urlInput" type="text" placeholder="https://your-project-default-rtdb.firebaseio.com"/>
+    <button onclick="saveUrl()">Save & Connect</button>
+  </div>
+</div>
+
+<div class="header">
+  <h1>✦ Eryn's Debut ✦</h1>
+  <p>RSVP Dashboard — March 31</p>
+</div>
+
+<div class="sync-bar">
+  <div class="sync-dot loading" id="syncDot"></div>
+  <span id="syncMsg">Waiting for Firebase URL…</span>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('submitted',this)">✅ Submitted RSVPs</button>
+  <button class="tab-btn" onclick="switchTab('guestlist',this)">📋 Full Guest List</button>
+  <button class="tab-btn" onclick="switchTab('declined',this)">❌ Declined</button>
+</div>
+
+<!-- TAB 1: SUBMITTED -->
+<div class="tab-pane active" id="tab-submitted">
+  <div class="stats">
+    <div class="stat-card"><div class="num" id="statTotal">–</div><div class="lbl">Total</div></div>
+    <div class="stat-card"><div class="num" id="statRoses">–</div><div class="lbl">🌹 Roses</div></div>
+    <div class="stat-card"><div class="num" id="statGift">–</div><div class="lbl">🎁 Gift</div></div>
+    <div class="stat-card"><div class="num" id="statBalloons">–</div><div class="lbl">🎈 Balloons</div></div>
+    <div class="stat-card"><div class="num" id="statBills">–</div><div class="lbl">💵 Bills</div></div>
+    <div class="stat-card"><div class="num" id="statHvg">–</div><div class="lbl">✨ HVG</div></div>
+    <div class="stat-card"><div class="num" id="statSpecial">–</div><div class="lbl">⭐ Special</div></div>
+    <div class="stat-card"><div class="num" id="statDeclined">–</div><div class="lbl">❌ Declined</div></div>
+  </div>
+  <div class="controls" id="subFilters">
+    <button class="filter-btn active" onclick="setFilter('all',this,'sub')">All</button>
+    <button class="filter-btn" onclick="setFilter('roses',this,'sub')">🌹 Roses</button>
+    <button class="filter-btn" onclick="setFilter('gift',this,'sub')">🎁 Gift</button>
+    <button class="filter-btn" onclick="setFilter('balloons',this,'sub')">🎈 Balloons</button>
+    <button class="filter-btn" onclick="setFilter('bills',this,'sub')">💵 Bills</button>
+    <button class="filter-btn" onclick="setFilter('hvg',this,'sub')">✨ HVG</button>
+    <button class="filter-btn" onclick="setFilter('host',this,'sub')">⭐ Host</button>
+    <button class="filter-btn" onclick="setFilter('photographer',this,'sub')">📸 Photo</button>
+  </div>
+  <div class="search-wrap"><input id="searchSub" type="text" placeholder="Search by name…" oninput="renderSubmitted()"/></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>#</th>
+        <th onclick="sortSub('name')">Name ↕</th>
+        <th onclick="sortSub('role')">Role ↕</th>
+        <th onclick="sortSub('time')">Submitted ↕</th>
+        <th style="width:60px"></th>
+      </tr></thead>
+      <tbody id="subBody"></tbody>
+    </table>
+    <div id="subEmpty" class="empty" style="display:none">No submissions yet.</div>
+  </div>
+</div>
+
+<!-- TAB 2: GUEST LIST -->
+<div class="tab-pane" id="tab-guestlist">
+  <div class="stats">
+    <div class="stat-card"><div class="num" id="glTotal">–</div><div class="lbl">Total Guests</div></div>
+    <div class="stat-card"><div class="num" id="glSubmitted">–</div><div class="lbl">✅ Submitted</div></div>
+    <div class="stat-card"><div class="num" id="glPending">–</div><div class="lbl">⏳ Pending</div></div>
+  </div>
+  <div class="controls" id="glFilters">
+    <button class="filter-btn active" onclick="setFilter('all',this,'gl')">All</button>
+    <button class="filter-btn" onclick="setFilter('submitted',this,'gl')">✅ Submitted</button>
+    <button class="filter-btn" onclick="setFilter('pending',this,'gl')">⏳ Pending</button>
+    <button class="filter-btn" onclick="setFilter('roses',this,'gl')">🌹 Roses</button>
+    <button class="filter-btn" onclick="setFilter('gift',this,'gl')">🎁 Gift</button>
+    <button class="filter-btn" onclick="setFilter('balloons',this,'gl')">🎈 Balloons</button>
+    <button class="filter-btn" onclick="setFilter('bills',this,'gl')">💵 Bills</button>
+    <button class="filter-btn" onclick="setFilter('hvg',this,'gl')">✨ HVG</button>
+    <button class="filter-btn" onclick="setFilter('host',this,'gl')">⭐ Host</button>
+    <button class="filter-btn" onclick="setFilter('photographer',this,'gl')">📸 Photo</button>
+  </div>
+  <div class="search-wrap"><input id="searchGl" type="text" placeholder="Search by name…" oninput="renderGuestList()"/></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>#</th>
+        <th onclick="sortGl('name')">Name ↕</th>
+        <th onclick="sortGl('role')">Assigned Role ↕</th>
+        <th>Status</th>
+        <th onclick="sortGl('time')">Submitted ↕</th>
+      </tr></thead>
+      <tbody id="glBody"></tbody>
+    </table>
+    <div id="glEmpty" class="empty" style="display:none">No guests found.</div>
+  </div>
+</div>
+
+
+<!-- TAB 3: DECLINED -->
+<div class="tab-pane" id="tab-declined">
+  <div class="stats">
+    <div class="stat-card"><div class="num" id="statDeclinedTotal">–</div><div class="lbl">Total Declined</div></div>
+  </div>
+  <div class="search-wrap"><input id="searchDeclined" type="text" placeholder="Search by name…" oninput="renderDeclined()"/></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>#</th>
+        <th onclick="sortDeclined('name')">Name ↕</th>
+        <th onclick="sortDeclined('role')">Assigned Role ↕</th>
+        <th onclick="sortDeclined('time')">Declined At ↕</th>
+        <th style="width:60px"></th>
+      </tr></thead>
+      <tbody id="declinedBody"></tbody>
+    </table>
+    <div id="declinedEmpty" class="empty" style="display:none">No declined responses yet.</div>
+  </div>
+</div>
+
+<div class="action-btns">
+  <button class="btn btn-refresh" onclick="loadData()">↻ Refresh</button>
+  <button class="btn btn-clear" onclick="clearAll()">🗑 Clear All RSVP Data</button>
+  <button class="btn btn-refresh" onclick="changeUrl()" style="font-size:.82rem">⚙ Change Firebase URL</button>
+</div>
+
+<script>
+/* ══ GUEST LIST ══ */
+const GUEST_LIST=[
+  ["Roemer","roses"],["Angel Mike","roses"],["Mike","roses"],
+  ["Jairus Miguel","roses"],["Jairus","roses"],["Jai","roses"],
+  ["Justin Marco","roses"],["Justin","roses"],["Justine","roses"],
+  ["Jonathan","roses"],["Rhob","roses"],["Erwin","roses"],["Remoh","roses"],
+  ["Glemar","roses"],["Jensen","roses"],
+  ["Jamcane Kian","roses"],["Jamcane","roses"],["Kian","roses"],
+  ["Julius","roses"],["Cristoffer Ivan","roses"],["Cristoffer","roses"],
+  ["Christopher","roses"],["Pierce Jefferson","roses"],["Pierce","roses"],
+  ["Wendell","roses"],["John Marc","roses"],["John","roses"],["JM","roses"],
+  ["Dreamy","gift"],["Mary Joy","gift"],["Mary Rose","gift"],["Sarrah","gift"],["Sheine","gift"],
+  ["Cassandra","gift"],["Lorien","gift"],
+  ["Stephanie","gift"],["Alliyah","gift"],["Alli","gift"],["Ali","gift"],
+  ["Angel Mika","gift"],["Mika","gift"],
+  ["Arriane","gift"],["Kathleen","gift"],
+  ["Andrija","gift"],["Reinzanine","gift"],["Rein","gift"],
+  ["Ziamei","gift"],["Glory","gift"],["Marian","gift"],["Alphea","gift"],
+  ["Vi","gift"],["Vivi","gift"],
+  ["Noah","balloons"],["Flory Mei","balloons"],["Fatima","balloons"],["Shenley","balloons"],
+  ["Angel Erenia","balloons"],["Angela Marie","balloons"],["Bianllyn","balloons"],["Renea","balloons"],
+  ["Niscelen","balloons"],["Celen","balloons"],["Natasha Kelly","balloons"],["Bea Lorraine","balloons"],
+  ["April","balloons"],["Naomi","balloons"],["Reianne","balloons"],
+  ["Kagome","balloons"],["Gome","balloons"],["Shemarie","balloons"],["Capsula","balloons"],
+  ["Hannah","balloons"],["Sachi Dine","balloons"],["Sachi","balloons"],["Kaizhen","balloons"],
+  ["Untoy","bills"],["Celeste","bills"],["Lhouie","bills"],
+  ["Juvy","bills"],["Juvs","bills"],["Edwin","bills"],["Justin Reya","bills"],
+  ["Leo","bills"],["Leo Ando","bills"],["Eliza","bills"],["Cherylle Joy","bills"],
+  ["Elena","bills"],["Grace","bills"],["Rebecca","bills"],["Santa","bills"],
+  ["Charissa","bills"],["Jayar","bills"],["Jeremy","bills"],
+  ["Jn Chin","bills"],["Chin","bills"],["Absalom","bills"],
+  ["Adele","bills"],["Madz","bills"],["Lilia","bills"],["Daisy","bills"],["Dessa","bills"],
+  ["Tita Marilyn","bills"],["Jane Pascua","bills"],["Jane Oliveros","bills"],["Jane","bills"],
+  ["Benilda","bills"],["Matet","bills"],["Mildred","bills"],
+  ["Isay","bills"],["Marissa","bills"],["Wilma","bills"],
+  ["Mark Gian","hvg"],["Gian","hvg"],["Janrey","hvg"],["Jerick","hvg"],["Marven","hvg"],
+  ["Leah","hvg"],["Angelica","hvg"],["Joross","hvg"],["Shine","hvg"],
+  ["Jaron","hvg"],["Nishie","hvg"],["Jhey Mark","hvg"],
+  ["Narra","host"],["Nirvana","host"],
+  ["Jimmy","photographer"],["Emmanuel","photographer"],["Emman","photographer"],["EJ","photographer"],
+];
+
+const ROLE_LABELS={roses:'🌹 Roses',gift:'🎁 Gift',balloons:'🎈 Balloons',bills:'💵 Bills',host:'⭐ Host',photographer:'📸 Photographer',hvg:'✨ HVG'};
+const URL_KEY='eryn_firebase_url';
+
+let submittedData=[];
+let declinedData=[];
+let subFilter='all',glFilter='all';
+let subSort={col:'time',dir:1},glSort={col:'name',dir:1};
+let firebaseUrl='';
+
+/* ══ URL MANAGEMENT ══ */
+function saveUrl(){
+  const val=document.getElementById('urlInput').value.trim().replace(/\/+$/,'');
+  if(!val.startsWith('https://')){ alert('Please enter a valid https:// URL'); return; }
+  localStorage.setItem(URL_KEY,val);
+  firebaseUrl=val;
+  document.getElementById('setupBanner').classList.add('hidden');
+  loadData();
+}
+
+function changeUrl(){
+  document.getElementById('setupBanner').classList.remove('hidden');
+  document.getElementById('urlInput').value=firebaseUrl;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function initUrl(){
+  const saved=localStorage.getItem(URL_KEY);
+  if(saved){
+    firebaseUrl=saved;
+    document.getElementById('setupBanner').classList.add('hidden');
+    document.getElementById('urlInput').value=saved;
+    return true;
+  }
+  setSyncStatus('err','Enter your Firebase URL above to get started');
+  return false;
+}
+
+/* ══ FIREBASE REST API ══ */
+async function fbGet(){
+  const res=await fetch(firebaseUrl+'/rsvps.json');
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  const data=await res.json();
+  if(!data) return [];
+  // data is { docId: {name,role,...}, ... }
+  return Object.values(data).filter(Boolean);
+}
+
+async function fbClear(){
+  await fetch(firebaseUrl+'/rsvps.json',{method:'DELETE'});
+}
+
+async function fbDelete(docId){
+  await fetch(firebaseUrl+'/rsvps/'+encodeURIComponent(docId)+'.json',{method:'DELETE'});
+}
+
+async function fbGetDeclined(){
+  const res=await fetch(firebaseUrl+'/declined.json');
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  const data=await res.json();
+  if(!data) return [];
+  return Object.values(data).filter(Boolean);
+}
+
+async function fbDeleteDeclined(docId){
+  await fetch(firebaseUrl+'/declined/'+encodeURIComponent(docId)+'.json',{method:'DELETE'});
+}
+
+async function removeEntry(name){
+  if(!confirm('Remove RSVP for "'+name+'"?')) return;
+  setSyncStatus('loading','Removing…');
+  try{
+    const docId=name.toLowerCase().replace(/[^a-z0-9]/g,'_');
+    await fbDelete(docId);
+    // Also remove from local submittedData immediately
+    submittedData=submittedData.filter(x=>x.name.toLowerCase()!==name.toLowerCase());
+    updateStats(); renderSubmitted(); renderGuestList();
+    setSyncStatus('ok','Removed · refreshed');
+  }catch(e){
+    setSyncStatus('err','Remove failed: '+e.message);
+  }
+}
+
+/* ══ SYNC STATUS ══ */
+function setSyncStatus(state,msg){
+  document.getElementById('syncDot').className='sync-dot '+state;
+  document.getElementById('syncMsg').textContent=msg;
+}
+
+/* ══ LOAD DATA ══ */
+async function loadData(){
+  if(!firebaseUrl){ setSyncStatus('err','No Firebase URL configured'); return; }
+  setSyncStatus('loading','Loading from Firebase…');
+  try{
+    [submittedData, declinedData]=await Promise.all([fbGet(), fbGetDeclined()]);
+    const t=new Date().toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'});
+    setSyncStatus('ok',`Synced · ${submittedData.length} yes · ${declinedData.length} no · ${t}`);
+  }catch(e){
+    setSyncStatus('err','Firebase error: '+e.message+' — check your URL and database rules');
+    submittedData=[]; declinedData=[];
+  }
+  updateStats(); renderSubmitted(); renderGuestList(); renderDeclined();
+}
+
+function updateStats(){
+  const s=submittedData;
+  document.getElementById('statTotal').textContent    =s.length;
+  document.getElementById('statRoses').textContent    =s.filter(x=>x.role==='roses').length;
+  document.getElementById('statGift').textContent     =s.filter(x=>x.role==='gift').length;
+  document.getElementById('statBalloons').textContent =s.filter(x=>x.role==='balloons').length;
+  document.getElementById('statBills').textContent    =s.filter(x=>x.role==='bills').length;
+  document.getElementById('statHvg').textContent      =s.filter(x=>x.role==='hvg').length;
+  document.getElementById('statSpecial').textContent  =s.filter(x=>x.role==='host'||x.role==='photographer').length;
+  const names=new Set(s.map(x=>x.name.toLowerCase()));
+  const sub=GUEST_LIST.filter(([n])=>names.has(n.toLowerCase())).length;
+  document.getElementById('glTotal').textContent    =GUEST_LIST.length;
+  document.getElementById('glSubmitted').textContent=sub;
+  document.getElementById('glPending').textContent  =GUEST_LIST.length-sub;
+  const decEl=document.getElementById('statDeclined');
+  if(decEl) decEl.textContent=declinedData.length;
+}
+
+/* ══ TABS ══ */
+function switchTab(tab,btn){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+tab).classList.add('active');
+}
+
+/* ══ FILTERS ══ */
+function setFilter(f,btn,tab){
+  if(tab==='sub'){subFilter=f;document.querySelectorAll('#subFilters .filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderSubmitted();}
+  else           {glFilter=f; document.querySelectorAll('#glFilters .filter-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active');renderGuestList();}
+}
+
+/* ══ SORT ══ */
+function sortSub(col){subSort.dir=subSort.col===col?-subSort.dir:1;subSort.col=col;renderSubmitted();}
+function sortGl(col) {glSort.dir=glSort.col===col?-glSort.dir:1;  glSort.col=col; renderGuestList();}
+
+/* ══ SUBMITTED TABLE ══ */
+function renderSubmitted(){
+  const search=document.getElementById('searchSub').value.toLowerCase().trim();
+  let data=submittedData.filter(x=>(subFilter==='all'||x.role===subFilter)&&(!search||x.name.toLowerCase().includes(search)));
+  data.sort((a,b)=>{
+    let va=a.name.toLowerCase(),vb=b.name.toLowerCase();
+    if(subSort.col==='role'){va=a.role||'';vb=b.role||'';}
+    else if(subSort.col==='time'){va=a.timestamp||'';vb=b.timestamp||'';}
+    return va<vb?-subSort.dir:va>vb?subSort.dir:0;
+  });
+  const tbody=document.getElementById('subBody'),empty=document.getElementById('subEmpty');
+  if(!data.length){tbody.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  tbody.innerHTML=data.map((x,i)=>`<tr>
+    <td style="color:rgba(255,255,255,.4);font-size:.82rem">${i+1}</td>
+    <td class="name-cell">${esc(x.name)}</td>
+    <td><span class="badge badge-${x.role||'roses'}">${ROLE_LABELS[x.role]||x.role}</span></td>
+    <td class="time-cell">${fmt(x.timestamp)}</td>
+    <td><button class="remove-btn" onclick="removeEntry('${esc(x.name)}')">✕</button></td>
+  </tr>`).join('');
+}
+
+/* ══ GUEST LIST TABLE ══ */
+function renderGuestList(){
+  const search=document.getElementById('searchGl').value.toLowerCase().trim();
+  const names=new Set(submittedData.map(x=>x.name.toLowerCase()));
+  const map={};submittedData.forEach(x=>{map[x.name.toLowerCase()]=x;});
+  let data=GUEST_LIST.map(([name,role])=>({name,role,submitted:names.has(name.toLowerCase()),timestamp:map[name.toLowerCase()]?.timestamp||null}));
+  if(glFilter==='submitted')    data=data.filter(x=>x.submitted);
+  else if(glFilter==='pending') data=data.filter(x=>!x.submitted);
+  else if(glFilter!=='all')     data=data.filter(x=>x.role===glFilter);
+  if(search) data=data.filter(x=>x.name.toLowerCase().includes(search));
+  data.sort((a,b)=>{
+    let va=a.name.toLowerCase(),vb=b.name.toLowerCase();
+    if(glSort.col==='role'){va=a.role;vb=b.role;}
+    else if(glSort.col==='time'){va=a.timestamp||'';vb=b.timestamp||'';}
+    return va<vb?-glSort.dir:va>vb?glSort.dir:0;
+  });
+  const tbody=document.getElementById('glBody'),empty=document.getElementById('glEmpty');
+  if(!data.length){tbody.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  tbody.innerHTML=data.map((x,i)=>`<tr>
+    <td style="color:rgba(255,255,255,.4);font-size:.82rem">${i+1}</td>
+    <td class="name-cell">${esc(x.name)}</td>
+    <td><span class="badge badge-${x.role}">${ROLE_LABELS[x.role]||x.role}</span></td>
+    <td><span class="status-badge ${x.submitted?'status-submitted':'status-pending'}">${x.submitted?'✅ Submitted':'⏳ Pending'}</span></td>
+    <td class="time-cell">${x.submitted?fmt(x.timestamp):'—'}</td>
+  </tr>`).join('');
+}
+
+/* ══ HELPERS ══ */
+function fmt(iso){
+  if(!iso)return'—';
+  const d=new Date(iso);
+  return d.toLocaleDateString('en-PH',{month:'short',day:'numeric'})+' '+d.toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'});
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+/* ══ CLEAR ══ */
+let declinedSort={col:'time',dir:1};
+function sortDeclined(col){declinedSort.dir=declinedSort.col===col?-declinedSort.dir:1;declinedSort.col=col;renderDeclined();}
+
+function renderDeclined(){
+  const search=document.getElementById('searchDeclined').value.toLowerCase().trim();
+  let data=declinedData.filter(x=>!search||x.name.toLowerCase().includes(search));
+  data.sort((a,b)=>{
+    let va=a.name.toLowerCase(),vb=b.name.toLowerCase();
+    if(declinedSort.col==='role'){va=a.role||'';vb=b.role||'';}
+    else if(declinedSort.col==='time'){va=a.timestamp||'';vb=b.timestamp||'';}
+    return va<vb?-declinedSort.dir:va>vb?declinedSort.dir:0;
+  });
+  const tbody=document.getElementById('declinedBody');
+  const empty=document.getElementById('declinedEmpty');
+  const total=document.getElementById('statDeclinedTotal');
+  if(total) total.textContent=data.length;
+  if(!data.length){tbody.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  tbody.innerHTML=data.map((x,i)=>`<tr>
+    <td style="color:rgba(255,255,255,.4);font-size:.82rem">${i+1}</td>
+    <td class="name-cell">${esc(x.name)}</td>
+    <td><span class="badge badge-${(x.role||'roses').replace(/[^a-z]/g,'')}">${ROLE_LABELS[x.role]||x.role}</span></td>
+    <td class="time-cell">${fmt(x.timestamp)}</td>
+    <td><button class="remove-btn" onclick="removeDeclined('${esc(x.name)}')">✕</button></td>
+  </tr>`).join('');
+}
+
+async function removeDeclined(name){
+  if(!confirm('Remove declined entry for "'+name+'"?')) return;
+  setSyncStatus('loading','Removing…');
+  try{
+    const docId=name.toLowerCase().replace(/[^a-z0-9]/g,'_');
+    await fbDeleteDeclined(docId);
+    declinedData=declinedData.filter(x=>x.name.toLowerCase()!==name.toLowerCase());
+    updateStats(); renderDeclined();
+    setSyncStatus('ok','Removed');
+  }catch(e){ setSyncStatus('err','Remove failed: '+e.message); }
+}
+
+async function clearAll(){
+  if(!confirm('Delete ALL RSVP data from Firebase? This cannot be undone.'))return;
+  setSyncStatus('loading','Clearing…');
+  try{
+    await Promise.all([fbClear(), fetch(firebaseUrl+'/declined.json',{method:'DELETE'})]);
+  }catch(e){ alert('Error: '+e.message); return; }
+  submittedData=[]; declinedData=[];
+  updateStats();renderSubmitted();renderGuestList();renderDeclined();
+  setSyncStatus('ok','All data cleared');
+}
+
+/* ══ INIT ══ */
+if(initUrl()) loadData();
+// Enter key on URL input
+document.getElementById('urlInput').addEventListener('keydown',e=>{ if(e.key==='Enter') saveUrl(); });
+// Auto-refresh every 30s
+setInterval(()=>{ if(firebaseUrl) loadData(); },30000);
+</script>
+</body>
+</html>
